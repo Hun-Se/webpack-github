@@ -1,8 +1,16 @@
 const path = require("path");
-const myLoader = require("./myLoader");
+// const myLoader = require('./myLoader');
+const webpack = require("webpack");
+const childProcess = require("child_process");
+const dotenv = require("dotenv");
+dotenv.config();
+const HtmlWebpackPlugin = require("html-webpack-plugin");
+const { CleanWebpackPlugin } = require("clean-webpack-plugin");
+
+console.log("nodeEnv" + process.env.NODE_ENV);
 
 module.exports = {
-  mode: "development",
+  mode: process.env.NODE_ENV === "development" ? "development" : "production",
   entry: {
     main: path.resolve("./src/app.js"),
   },
@@ -18,7 +26,7 @@ module.exports = {
       //     use: [
       //         path.resolve('./myLoader.js')
       //     ]
-      // }
+      // },
       {
         test: /\.css$/,
         use: ["style-loader", "css-loader"],
@@ -28,17 +36,31 @@ module.exports = {
         type: "asset",
         parser: {
           dataUrlCondition: {
-            maxSize: 20 * 1024,
+            maxSize: 200 * 1024,
           },
         },
       },
     ],
   },
-
   plugins: [
     new webpack.BannerPlugin({
-      //toLocaleString : 날짜의 문자열 표현을 지역의 언어에 맞는 형식으로 반환합니다.
-      banner: "마지막 빌드 시간은 " + new Date().toLocaleString() + " 입니다.",
+      banner: `
+                Commit version : ${childProcess.execSync(
+                  "git rev-parse --short HEAD"
+                )}
+                Committer name : ${childProcess.execSync(
+                  "git config user.name"
+                )}
+                Commit Date : ${new Date().toLocaleString()}
+            `,
     }),
+    new webpack.DefinePlugin({
+      dev: JSON.stringify(process.env.DEV_API),
+      pro: JSON.stringify(process.env.PRO_API),
+    }),
+    new HtmlWebpackPlugin({
+      template: "./src/index.html",
+    }),
+    new CleanWebpackPlugin(),
   ],
 };
